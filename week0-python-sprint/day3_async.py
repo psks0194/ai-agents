@@ -10,10 +10,12 @@ URLS = [
     "https://httpbin.org/delay/3",
 ]
 
+
 async def fetch_url(url: str) -> int:
     async with httpx.AsyncClient() as client:
         response = await client.get(url, timeout=10.0)
         return response.status_code
+
 
 async def main() -> None:
     start = time.perf_counter()
@@ -26,6 +28,7 @@ async def main() -> None:
 
     end = time.perf_counter()
     print(f"Async total time: {end - start:.2f}s")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

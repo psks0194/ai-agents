@@ -14,6 +14,7 @@ def fetch_url(url: str) -> int:
     response = httpx.get(url, timeout=10.0)
     return response.status_code
 
+
 def main() -> None:
     start = time.perf_counter()
     for url in URLS:
@@ -21,6 +22,7 @@ def main() -> None:
         print(status_code)
     end = time.perf_counter()
     print(f"Sync total time: {end - start:.2f}s")
+
 
 if __name__ == "__main__":
     main()

@@ -19,6 +19,7 @@ async def trap1() -> None:
 
 import time
 
+
 async def trap2() -> None:
     print("Trap 2: starting...")
     # WRONG: time.sleep is sync — it blocks the entire event loop
@@ -31,8 +32,10 @@ async def trap2() -> None:
 # WRONG in a .py file:
 # result = await get_data()
 
+
 async def trap4() -> None:
     print("This will never print")
+
 
 # WRONG: just calling the function does nothing — no event loop is running
 # trap4()

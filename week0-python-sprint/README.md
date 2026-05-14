@@ -9,6 +9,7 @@ A week of Python fundamentals, building up to the patterns used in real agent co
 | 1 | Grade calculator — basic syntax, lists, dicts, control flow | `main.py` |
 | 2 | Type hints & Pydantic — runtime-validated data at boundaries ([notes](./d2c.md)) | `day2_types.py`, `day2_pydantic.py`, `day2-excercise.py` |
 | 3 | `async` / `await` — concurrent I/O with `asyncio` and `httpx` | `day3_sync.py`, `day3_async.py`, `day3_patterns.py`, `day3_gotcha.py`, `day3_projects.py` |
+| 4 | Config & packaging — `.env`, `pydantic-settings`, PEP 723 scripts, `src/` layout | `day4_env.py`, `day4_settings.py`, `quick_script.py`, `src/fetcher/` |
 
 ---
 
@@ -61,6 +62,21 @@ Concurrency for I/O-bound work. The same three URL fetches done sync vs. async s
 
 ---
 
+## Day 4 — Config & packaging
+
+Getting secrets out of source code and turning a script into a real installable package.
+
+- **`day4_env.py`** — load API keys and app config from a `.env` file with `python-dotenv` + `os.getenv`. Resolves the `.env` path relative to the repo root so the script works regardless of where it's run from. `.env` is gitignored; the committed `.env.example` at the repo root documents the expected variables.
+- **`day4_settings.py`** — same idea, but typed: a `pydantic-settings` `BaseSettings` subclass auto-loads from `.env`, validates required keys, and gives you `settings.openai_api_key` instead of `os.getenv("OPENAI_API_KEY")`. Missing keys fail loudly at startup rather than silently returning `None`.
+- **`quick_script.py`** — PEP 723 inline script metadata. The `# /// script` header declares dependencies in the file itself, so `uv run quick_script.py` spins up an isolated venv on the fly. No `pyproject.toml`, no `uv sync` — useful for one-off utilities.
+- **`src/fetcher/`** — the Day 3 concurrent fetcher reshaped as a real package using the `src/` layout:
+  - `models.py` — the `Post` Pydantic model.
+  - `client.py` — `fetch_post` / `fetch_many` (async + `httpx`).
+  - `main.py` — CLI entry point exposed as a console script via `[project.scripts]` in `pyproject.toml`.
+  - After `uv sync`, run it as `uv run fetcher` from anywhere in the project.
+
+---
+
 ## Running
 
 ```bash
@@ -73,9 +89,14 @@ uv run day3_async.py
 uv run day3_patterns.py
 uv run day3_gotcha.py
 uv run day3_projects.py
+uv run day4_env.py
+uv run day4_settings.py
+uv run quick_script.py     # PEP 723 — no install step needed
+uv run fetcher             # console script from src/fetcher/
 ```
 
 ## Requirements
 
 - Python 3.13+
-- `httpx`, `pydantic` (installed via `uv sync`)
+- `httpx`, `pydantic`, `pydantic-settings`, `python-dotenv` (installed via `uv sync`)
+- Copy `../.env.example` to `../.env` and fill in real API keys before running the Day 4 scripts.

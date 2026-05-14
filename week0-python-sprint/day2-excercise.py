@@ -2,11 +2,13 @@ from pydantic import BaseModel, Field
 from typing import Literal
 import json
 
+
 class WebSearchTool(BaseModel):
     tool_name: Literal["web_search"] = "web_search"
     query: str = Field(..., min_length=1, max_length=200)
     max_results: int = Field(default=5, ge=1, le=10)
     region: Literal["US", "CA", "GB", "IN"] = "US"
+
 
 class CalculatorTool(BaseModel):
     tool_name: Literal["calculator"] = "calculator"
@@ -34,58 +36,47 @@ def execute_search(tool_call_json: str) -> str:
         else:
             return f"Error: Unknown tool name: '{tool_name}'"
     except Exception as e:
-        return f"Error validating '{tool_name}' tool call: {e}"    
+        return f"Error validating '{tool_name}' tool call: {e}"
     if tool_name == "web_search":
         return (
-        f"Executing web search for: {tool.query}\n"
-        f"Max results: {tool.max_results}, Region: {tool.region}\n"
-        f"tool name: {tool.tool_name}\n"
-    )
+            f"Executing web search for: {tool.query}\n"
+            f"Max results: {tool.max_results}, Region: {tool.region}\n"
+            f"tool name: {tool.tool_name}\n"
+        )
     elif tool_name == "calculator":
         return (
-        f"Executing calculator for: {tool.expression}\n"
-        f"Precision: {tool.precision}\n"
-        f"tool name: {tool.tool_name}\n"
-    )
+            f"Executing calculator for: {tool.expression}\n"
+            f"Precision: {tool.precision}\n"
+            f"tool name: {tool.tool_name}\n"
+        )
+
 
 # Test cases — like calls from an LLM
 test_calls = [
     # Valid: minimal
     '{"tool_name": "web_search", "query": "weather in mumbai"}',
-
     # Valid: full
     '{"query": "rbi ppi 2026", "max_results": 10, "region": "in"}',
-
     # Invalid: empty query
     '{"query": ""}',
-
     # Invalid: max_results too high
     '{"query": "test", "max_results": 100}',
-
     # Invalid: unknown region
     '{"query": "test", "region": "antarctica"}',
-
     # Invalid: wrong tool_name (shouldn't be allowed)
     '{"tool_name": "delete_database", "query": "test"}',
-
     # Invalid: malformed JSON
-    '{not valid json',
-
+    "{not valid json",
     # Valid: calculator tool call
     '{"tool_name": "calculator", "expression": "2 + 2"}',
-
     # Invalid: calculator tool call
     '{"tool_name": "calculator", "expression": "2 + 2", "precision": 100}',
-
     # Invalid: calculator tool call
     '{"tool_name": "calculator", "expression": "2 + 2", "precision": 100}',
-
     # Invalid: calculator tool call
     '{"tool_name": "calculator", "expression": "2 + 2", "precision": 100}',
-
     # Invalid: calculator tool call
     '{"tool_name": "calculator", "expression": "2 + 2", "precision": 100}',
-
     # Invalid: calculator tool call
     '{"tool_name": "calculator", "expression": "2 + 2", "precision": 100}',
 ]
@@ -96,5 +87,3 @@ for i, call in enumerate(test_calls, start=1):
     result = execute_search(call)
     print(result)
     print()
-
-

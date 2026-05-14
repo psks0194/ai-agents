@@ -5,8 +5,9 @@ print a summary. This is the shape of real agent code.
 
 import asyncio
 import httpx
-from pydantic import BaseModel, Field, ValidationError
-import time 
+from pydantic import BaseModel
+import time
+
 
 class Post(BaseModel):
     userId: int
@@ -14,12 +15,14 @@ class Post(BaseModel):
     title: str
     body: str
 
+
 async def fetch_post(client: httpx.AsyncClient, post_id: int) -> Post:
     """Fetch and validate a single post."""
     url = f"https://jsonplaceholder.typicode.com/posts/{post_id}"
     response = await client.get(url, timeout=5.0)
     response.raise_for_status()
     return Post.model_validate(response.json())
+
 
 async def main() -> None:
     post_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]

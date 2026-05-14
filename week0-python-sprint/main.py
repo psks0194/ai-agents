@@ -1,15 +1,16 @@
 def calculate_grade(score: int) -> str:
     """return a grade for score."""
-    if score>=90:
-        return "A"    
-    elif score>=80:
-        return "B" 
-    elif score>=70:
-        return "C" 
-    elif score>=60:
-        return "D" 
+    if score >= 90:
+        return "A"
+    elif score >= 80:
+        return "B"
+    elif score >= 70:
+        return "C"
+    elif score >= 60:
+        return "D"
     else:
-        return "F" 
+        return "F"
+
 
 # print(calculation_grade(95))
 # print(calculation_grade(85))
@@ -43,7 +44,7 @@ def main() -> None:
         print(f"{student['name']:<10} {student['score']:>3}  {student['grade']}")
 
     # top performers
-    top_performers = [s for s in sorted_students if s["grade"] in ('A','B')]
+    top_performers = [s for s in sorted_students if s["grade"] in ("A", "B")]
     print("Top Performers:")
     print("-" * 30)
     for student in top_performers:
@@ -55,7 +56,7 @@ def main() -> None:
 
     print("-" * 30)
     print(f"Average score: {average_score:.2f}")
-    
+
     # find highest and lowest score
     highest_score = max(student["score"] for student in students)
     lowest_score = min(student["score"] for student in students)
@@ -63,7 +64,6 @@ def main() -> None:
     print("-" * 30)
     print(f"Highest score: {highest_score}")
     print(f"Lowest score: {lowest_score}")
-
 
 
 if __name__ == "__main__":

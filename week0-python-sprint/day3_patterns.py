@@ -24,7 +24,9 @@ async def pattern_sequential() -> None:
     elapsed = time.perf_counter() - start
     print(f"Sequential elapsed: {elapsed:.2f}s")
 
+
 # asyncio.run(pattern_sequential())
+
 
 async def pattern_gather() -> None:
     """gather runs concurrently — total time = the slowest one."""
@@ -41,7 +43,9 @@ async def pattern_gather() -> None:
     print(f"Results: {results}")
     print(f"Gather elapsed: {elapsed:.2f}s")
 
+
 # asyncio.run(pattern_gather())
+
 
 async def pattern_as_completed() -> None:
     """Process results in the order they finish, not the order they started."""
@@ -61,7 +65,9 @@ async def pattern_as_completed() -> None:
     elapsed = time.perf_counter() - start
     print(f"as_completed elapsed: {elapsed:.2f}s")
 
+
 # asyncio.run(pattern_as_completed())
+
 
 async def maybe_fail(name: str, should_fail: bool) -> str:
     await asyncio.sleep(0.5)
@@ -87,7 +93,9 @@ async def pattern_gather_with_errors() -> None:
         else:
             print(f"  ✅ {r}")
 
+
 # asyncio.run(pattern_gather_with_errors())
+
 
 async def main() -> None:
     await pattern_sequential()
