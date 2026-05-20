@@ -2,10 +2,10 @@
 
 Building the same agent across Anthropic, OpenAI, and Gemini SDKs — feeling the protocol underneath every framework.
 
-## Status (Day 1)
+## Status (Day 2 — 2026-05-20)
 
 - ✅ Anthropic SDK — basic call, multi-turn conversation, system prompts, streaming
-- ⏳ Anthropic SDK — tool use (Day 2)
+- ✅ Anthropic SDK — tool use: agent loop + calculator, current-time, web-fetch tools (Day 2)
 - ⏳ OpenAI SDK — port (Day 3)
 - ⏳ Gemini SDK — port (Day 4)
 - ⏳ Streaming and structured outputs polish (Day 5)
@@ -13,6 +13,9 @@ Building the same agent across Anthropic, OpenAI, and Gemini SDKs — feeling th
 ## Run
 
 \`\`\`bash
+# Tool-using agent (calculator, current time, web fetch)
+uv run python -m week1_tri_provider_agent.agent
+
 # Streaming chat with Claude
 uv run python -m week1_tri_provider_agent.streaming_chat
 
@@ -27,7 +30,9 @@ src/week1_tri_provider_agent/
 ├── config.py            # pydantic-settings config
 ├── first_call.py        # smallest possible LLM call
 ├── chat.py              # multi-turn conversation
-└── streaming_chat.py    # multi-turn + streaming
+├── streaming_chat.py    # multi-turn + streaming
+├── tools.py             # tool schemas + implementations (calculator, time, fetch)
+└── agent.py             # the agent loop: call → tool_use → tool_result → repeat
 \`\`\`
 
 Part of the IntellAIgent Agent Builder Curriculum, Week 1.
