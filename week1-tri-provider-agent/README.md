@@ -2,12 +2,12 @@
 
 Building the same agent across Anthropic, OpenAI, and Gemini SDKs — feeling the protocol underneath every framework.
 
-## Status (Day 3 — 2026-05-21)
+## Status (Day 4 — 2026-06-01)
 
 - ✅ Anthropic SDK — basic call, multi-turn conversation, system prompts, streaming (Day 1)
 - ✅ Anthropic SDK — tool use loop, calculator + time + web fetch (Day 2)
 - ✅ OpenAI SDK — full port of the tool-using agent (Day 3)
-- ⏳ Gemini SDK — port (Day 4)
+- ✅ Gemini SDK — full port of the tool-using agent (Day 4)
 - ⏳ Streaming and structured outputs polish (Day 5)
 
 ## Run
@@ -32,13 +32,23 @@ uv run python -m week1_tri_provider_agent.openai_chat
 
 # Smallest possible OpenAI call
 uv run python -m week1_tri_provider_agent.openai_first_call
+
+# --- Gemini ---
+# Tool-using agent (same tools, Gemini FunctionDeclaration schema + loop)
+uv run python -m week1_tri_provider_agent.gemini_agent
+
+# Multi-turn chat with Gemini
+uv run python -m week1_tri_provider_agent.gemini_chat
+
+# Smallest possible Gemini call
+uv run python -m week1_tri_provider_agent.gemini_first_call
 \`\`\`
 
 ## Architecture (so far)
 
 \`\`\`
 src/week1_tri_provider_agent/
-├── config.py              # pydantic-settings config (Anthropic + OpenAI keys)
+├── config.py              # pydantic-settings config (Anthropic + OpenAI + Google keys)
 ├── tools.py               # provider-agnostic tool implementations (calculator, time, fetch)
 │
 ├── first_call.py          # Anthropic: smallest possible LLM call
@@ -49,7 +59,12 @@ src/week1_tri_provider_agent/
 ├── openai_first_call.py   # OpenAI: smallest possible LLM call
 ├── openai_chat.py         # OpenAI: multi-turn conversation
 ├── openai_tools.py        # OpenAI: tool schema wrappers (reuses tools.py implementations)
-└── openai_agent.py        # OpenAI: agent loop — direct port of agent.py
+├── openai_agent.py        # OpenAI: agent loop — direct port of agent.py
+│
+├── gemini_first_call.py   # Gemini: smallest possible LLM call
+├── gemini_chat.py         # Gemini: multi-turn conversation
+├── gemini_tools.py        # Gemini: FunctionDeclaration schema wrappers (reuses tools.py)
+└── gemini_agent.py        # Gemini: agent loop — direct port of agent.py
 \`\`\`
 
 The tool *implementations* in `tools.py` are shared across providers — only the

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = Field(..., min_length=1)
     openai_api_key: str = Field(..., min_length=1)
+    google_api_key: str = Field(..., min_length=1)
 
 
 settings = Settings()
