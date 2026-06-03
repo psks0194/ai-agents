@@ -2,13 +2,13 @@
 
 Building the same agent across Anthropic, OpenAI, and Gemini SDKs — feeling the protocol underneath every framework.
 
-## Status (Day 4 — 2026-06-01)
+## Status (Day 5 — 2026-06-02)
 
 - ✅ Anthropic SDK — basic call, multi-turn conversation, system prompts, streaming (Day 1)
 - ✅ Anthropic SDK — tool use loop, calculator + time + web fetch (Day 2)
 - ✅ OpenAI SDK — full port of the tool-using agent (Day 3)
 - ✅ Gemini SDK — full port of the tool-using agent (Day 4)
-- ⏳ Streaming and structured outputs polish (Day 5)
+- ✅ Streaming agent loop, structured outputs, and cross-provider benchmark (Day 5)
 
 ## Run
 
@@ -42,6 +42,16 @@ uv run python -m week1_tri_provider_agent.gemini_chat
 
 # Smallest possible Gemini call
 uv run python -m week1_tri_provider_agent.gemini_first_call
+
+# --- Cross-cutting (Day 5) ---
+# Streaming version of the Anthropic agent — tokens printed as generated
+uv run python -m week1_tri_provider_agent.agent_streaming
+
+# Structured outputs — force JSON matching a Pydantic schema (Anthropic + OpenAI)
+uv run python -m week1_tri_provider_agent.structured_output
+
+# Benchmark the same task across all three providers (latency, tokens, cost)
+uv run python -m week1_tri_provider_agent.benchmark
 \`\`\`
 
 ## Architecture (so far)
@@ -64,7 +74,11 @@ src/week1_tri_provider_agent/
 ├── gemini_first_call.py   # Gemini: smallest possible LLM call
 ├── gemini_chat.py         # Gemini: multi-turn conversation
 ├── gemini_tools.py        # Gemini: FunctionDeclaration schema wrappers (reuses tools.py)
-└── gemini_agent.py        # Gemini: agent loop — direct port of agent.py
+├── gemini_agent.py        # Gemini: agent loop — direct port of agent.py
+│
+├── agent_streaming.py     # Anthropic: agent loop with token-by-token streaming output
+├── structured_output.py   # Schema-constrained JSON via Pydantic (Anthropic + OpenAI)
+└── benchmark.py           # Same task across all 3 providers: latency, tokens, cost
 \`\`\`
 
 The tool *implementations* in `tools.py` are shared across providers — only the
