@@ -7,7 +7,7 @@ Each pattern is its own runnable module built on a thin, typed LLM layer
 (`llm.py`). The throughline: most "agents" are a handful of focused LLM calls
 composed cleanly — not one giant prompt.
 
-## Status (Day 6 — 2026-06-08)
+## Status (Day 11 — 2026-06-13)
 
 - ✅ Typed LLM helpers — schema-constrained calls for Anthropic + OpenAI (`llm.py`)
 - ✅ Prompt chaining — Scout → Outline → Drafter → Critic pipeline (`chain.py`)
@@ -16,6 +16,10 @@ composed cleanly — not one giant prompt.
 - ✅ Composition — a router whose handlers are themselves chains (`composed.py`)
 - ✅ Orchestrator–workers — planning LLM dispatches tasks in a loop (`orchestrator.py`)
 - ✅ Evaluator–optimizer — generate, evaluate, revise until shippable (`evaluator_optimizer.py`)
+- ✅ Memory: naive baseline — watch the token cost curve grow (`memory_naive.py`)
+- ✅ Memory: `Conversation` abstraction + summarization strategy (`conversation.py`)
+- ✅ Memory: threshold-triggered summarization in action (`memory_summarized.py`)
+- ✅ Memory: structured scratchpad for a research agent (`scratchpad.py`)
 
 ## The patterns
 
@@ -100,6 +104,59 @@ topic ─▶ Drafter ─▶ draft ─▶ Evaluator ─┬─ ship ─▶ final p
             └──── revise (issues) ◀──────┘
 ```
 
+## Memory / context management
+
+Separate from the six design patterns: a conversation only stays cheap and
+coherent if you actively manage its history. These modules build up the problem,
+then the fix.
+
+### Naive baseline — `memory_naive.py`
+
+What every Day 1 chat does: keep appending messages and resend the *whole*
+history every turn. The module runs a fixed 10-turn conversation and prints the
+per-turn token table — input tokens climb every turn because you re-pay for all
+prior context. The point is to *see* the cost curve, not to fix it.
+
+### `Conversation` abstraction + summarization — `conversation.py`
+
+A `Conversation` dataclass wraps the message-list mess: it owns `messages`,
+tracks cumulative token usage and cost, and exposes `send()`,
+`estimated_tokens`, and `print_stats()`. The summarization strategy
+(`summarize_oldest`) compresses the oldest turns into a single summary message
+while keeping the most recent N turns verbatim — so history stops growing
+unbounded.
+
+```
+[old turns] + [recent N turns]  ─▶ summarize oldest ─▶ [summary msg] + [recent N turns]
+```
+
+### Summarization in action — `memory_summarized.py`
+
+Runs the *same* 10-turn conversation as `memory_naive.py`, but through a
+`Conversation` with a token threshold. Before each turn, if `estimated_tokens`
+crosses `SUMMARIZE_THRESHOLD_TOKENS` it calls `summarize_oldest()` first. The
+result is the payoff: per-turn input tokens grow, drop sharply after a summary
+fires, then grow again — a sawtooth instead of the naive straight climb. Run it
+right after `memory_naive` to compare the two cost curves side by side.
+
+### Scratchpad memory — `scratchpad.py`
+
+A different kind of memory: instead of compressing *dialogue*, the agent keeps a
+typed, structured **scratchpad** of notes and decisions it accumulates across a
+run. A research agent loops — at each step it reads its scratchpad, may add a
+note, commit a decision, dispatch a worker for the next question, or conclude —
+then writes a final answer from the notes alone.
+
+```
+question ─▶ [read scratchpad] ─▶ ResearchStep ─┬─ add note / commit decision
+                ▲                               ├─ next_question ─▶ worker ─┐
+                └──────── (loop) ◀──────────────┘                          │
+                                                └─ ready_to_conclude ─▶ final answer
+```
+
+Conversation history is unstructured and grows; a scratchpad is structured and
+*curated* — the agent decides what's worth keeping.
+
 ## Run
 
 ```bash
@@ -121,6 +178,15 @@ uv run python -m week2_agent_patterns.orchestrator
 
 # Evaluator–optimizer — generate, evaluate, revise until shippable
 uv run python -m week2_agent_patterns.evaluator_optimizer
+
+# Memory: naive accumulation — watch the token cost curve grow
+uv run python -m week2_agent_patterns.memory_naive
+
+# Memory: same conversation, but summarize past a token threshold (sawtooth curve)
+uv run python -m week2_agent_patterns.memory_summarized
+
+# Memory: research agent with a structured scratchpad
+uv run python -m week2_agent_patterns.scratchpad
 ```
 
 ## Architecture
@@ -136,7 +202,12 @@ src/week2_agent_patterns/
 ├── parallel.py             # Pattern 3: parallelization — decompose, async fan-out, synthesize
 ├── composed.py             # Pattern 4: composition — a router whose handlers include the chain
 ├── orchestrator.py         # Pattern 5: orchestrator–workers — adaptive planning loop
-└── evaluator_optimizer.py  # Pattern 6: evaluator–optimizer — generate, evaluate, revise loop
+├── evaluator_optimizer.py  # Pattern 6: evaluator–optimizer — generate, evaluate, revise loop
+│
+├── memory_naive.py         # Memory: naive accumulation — the cost-curve baseline
+├── conversation.py         # Memory: Conversation abstraction + summarization strategy
+├── memory_summarized.py    # Memory: threshold-triggered summarization in action
+└── scratchpad.py           # Memory: structured scratchpad for a research agent
 ```
 
 `llm.py` is deliberately *not* a framework — just the minimal glue so the focus
