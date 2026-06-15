@@ -7,7 +7,7 @@ Each pattern is its own runnable module built on a thin, typed LLM layer
 (`llm.py`). The throughline: most "agents" are a handful of focused LLM calls
 composed cleanly — not one giant prompt.
 
-## Status (Day 11 — 2026-06-13)
+## Status (Day 14 — 2026-06-15)
 
 - ✅ Typed LLM helpers — schema-constrained calls for Anthropic + OpenAI (`llm.py`)
 - ✅ Prompt chaining — Scout → Outline → Drafter → Critic pipeline (`chain.py`)
@@ -20,6 +20,9 @@ composed cleanly — not one giant prompt.
 - ✅ Memory: `Conversation` abstraction + summarization strategy (`conversation.py`)
 - ✅ Memory: threshold-triggered summarization in action (`memory_summarized.py`)
 - ✅ Memory: structured scratchpad for a research agent (`scratchpad.py`)
+- ✅ RAG: index the curriculum `notes.md` files into ChromaDB (`rag_index.py`)
+- ✅ RAG: retrieval layer — query the index for top-K chunks (`rag_retrieve.py`)
+- ✅ RAG: "chat with your notes" agent — retrieve → ground → answer (`rag_agent.py`)
 
 ## The patterns
 
@@ -157,6 +160,57 @@ question ─▶ [read scratchpad] ─▶ ResearchStep ─┬─ add note / commi
 Conversation history is unstructured and grows; a scratchpad is structured and
 *curated* — the agent decides what's worth keeping.
 
+## RAG — retrieval over the curriculum notes
+
+Memory keeps context *inside* a single run. RAG (retrieval-augmented generation)
+pulls relevant context *in from outside* — here, the `notes.md` files written across
+every week of the curriculum.
+
+RAG splits into two phases: **index once** (offline), then **retrieve + generate**
+on every question (online).
+
+```
+INDEX (once):     notes.md ─▶ chunk ─▶ embed ─▶ ChromaDB (.chroma/)
+ANSWER (per Q):   question ─▶ embed ─▶ top-K chunks ─▶ stuff into prompt ─▶ LLM answer
+```
+
+### Indexing — `rag_index.py`
+
+The build-once step. It walks the umbrella repo for `notes.md` files, splits each
+into chunks at markdown heading boundaries, and stores them in a persistent
+**ChromaDB** collection on disk (`.chroma/`). ChromaDB embeds each chunk
+automatically, so later you can search by *meaning*, not keywords. Re-run any time
+the notes change — it rebuilds the collection from scratch.
+
+```
+notes.md files ─▶ chunk at headings ─▶ ChromaDB (embed + persist to .chroma/)
+```
+
+### Retrieval — `rag_retrieve.py`
+
+The query layer. `retrieve(query, n_results)` embeds the question, asks ChromaDB
+for the top-K nearest chunks, and returns them as typed `RetrievedChunk` objects
+(text + `source` + `heading` + `distance`, where **smaller distance = more
+similar**). It reuses `CHROMA_DIR`/`COLLECTION_NAME` from the indexer so both
+halves point at the same store. Run it directly to eyeball what comes back for a
+few sample queries — useful for sanity-checking retrieval *before* an LLM is
+involved.
+
+### The RAG agent — `rag_agent.py`
+
+The full "chat with your notes" pipeline: retrieve top-K chunks → format them as
+context → ask Claude to answer **grounded only in that context**, citing which
+note/day it came from and admitting when the context is insufficient (rather than
+falling back on general knowledge). A CLI takes the question, `--n` (chunk count),
+and `--quiet` (hide the retrieved chunks).
+
+```
+question ─▶ retrieve() ─▶ format_context ─▶ [grounded prompt] ─▶ Claude ─▶ cited answer
+```
+
+This is the substrate of every "chat with your docs" product — and the payoff of
+having written `notes.md` files all along.
+
 ## Run
 
 ```bash
@@ -187,6 +241,16 @@ uv run python -m week2_agent_patterns.memory_summarized
 
 # Memory: research agent with a structured scratchpad
 uv run python -m week2_agent_patterns.scratchpad
+
+# RAG: (re)build the curriculum notes index in ChromaDB — run once
+uv run python -m week2_agent_patterns.rag_index
+
+# RAG: inspect what retrieval returns for a few sample queries
+uv run python -m week2_agent_patterns.rag_retrieve
+
+# RAG: ask a question about your notes (retrieve → grounded answer)
+uv run python -m week2_agent_patterns.rag_agent
+uv run python -m week2_agent_patterns.rag_agent "How does the orchestrator differ from routing?" --n 6
 ```
 
 ## Architecture
@@ -207,7 +271,11 @@ src/week2_agent_patterns/
 ├── memory_naive.py         # Memory: naive accumulation — the cost-curve baseline
 ├── conversation.py         # Memory: Conversation abstraction + summarization strategy
 ├── memory_summarized.py    # Memory: threshold-triggered summarization in action
-└── scratchpad.py           # Memory: structured scratchpad for a research agent
+├── scratchpad.py           # Memory: structured scratchpad for a research agent
+│
+├── rag_index.py            # RAG: chunk + index the curriculum notes.md files into ChromaDB
+├── rag_retrieve.py         # RAG: query the index — top-K nearest chunks as typed objects
+└── rag_agent.py            # RAG: "chat with your notes" — retrieve → grounded, cited answer
 ```
 
 `llm.py` is deliberately *not* a framework — just the minimal glue so the focus

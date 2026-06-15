@@ -12,6 +12,9 @@ build/
 # uv
 .uv/
 
+# ChromaDB (RAG index — rebuildable from notes.md)
+.chroma/
+
 # macOS
 .DS_Store
 
