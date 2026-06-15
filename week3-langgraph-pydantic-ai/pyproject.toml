@@ -1,0 +1,30 @@
+[project]
+name = "week3-langgraph-pydantic-ai"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "prashant singh", email = "v_prashant.a@circles.co" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "grandalf>=0.8",
+    "langchain-anthropic>=1.4.6",
+    "langgraph>=1.2.5",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.1",
+    "python-dotenv>=1.2.2",
+    "rich>=15.0.0",
+]
+
+[project.scripts]
+week3-langgraph-pydantic-ai = "week3_langgraph_pydantic_ai:main"
+
+[build-system]
+requires = ["uv_build>=0.11.13,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.17",
+]
