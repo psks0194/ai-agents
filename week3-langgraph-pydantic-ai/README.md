@@ -13,7 +13,7 @@ The throughline from Week 2: once you've hand-rolled the agent loop, both
 frameworks stop looking like magic — they're the loop and the plumbing,
 standardized in two different shapes.
 
-## Status (Day 3 — 2026-06-17)
+## Status (Day 4 — 2026-06-17)
 
 **LangGraph**
 
@@ -29,6 +29,12 @@ standardized in two different shapes.
 - ✅ First agent — typed output, no tools (`pai_first_agent.py`)
 - ✅ Tool agent — decorated tools + injected deps; framework runs the loop (`pai_tool_agent.py`)
 - ✅ Streaming the loop — `agent.iter()` exposes nodes + events (`pai_tool_stream_agent.py`)
+
+**Head-to-head**
+
+- ✅ Research note — same task, Pydantic AI version (`research_note_pai.py`)
+- ✅ Research note — same task, LangGraph version (`research_note_lg.py`)
+- ✅ Comparison — run both on one topic, side-by-side metrics (`compare_frameworks.py`)
 
 ## Core concepts
 
@@ -206,6 +212,60 @@ driven by Pydantic AI, with `iter()` letting you watch each turn.
 > `PartDeltaEvent` is imported but unhandled — add a branch on it for true
 > token-by-token streaming of the model's text/args.
 
+## Head-to-head: the same agent, both frameworks
+
+The capstone — one task (*generate a structured research note on a topic*, with
+`fetch_url` + `get_current_date` tools and a typed `ResearchNote` output), built
+twice, then compared on the same prompt.
+
+### 9. Research note — Pydantic AI — `research_note_pai.py`
+
+`Agent(model, deps_type=Deps, output_type=ResearchNote, instructions=…)` plus two
+`@agent.tool` functions. `run_sync` runs the entire tool loop and returns a typed
+`ResearchNote`. `run()` also captures metrics (wall time, tokens, requests) for
+the comparison.
+
+### 10. Research note — LangGraph — `research_note_lg.py`
+
+The same task, but the agent loop is built **by hand** as a graph:
+
+```
+START ─▶ agent ─▶ (should_continue?)
+            ▲          ├─ tool_calls present ─▶ tools ─┐
+            └──────────┘  (cycle back)                 │
+                           └─ none ─▶ finalize ─▶ END
+```
+
+- `agent_node` calls a `bind_tools(...)` model; `tool_node` executes **every**
+  tool call in the last message; `should_continue` cycles back to `agent` while
+  tool calls keep appearing, else routes to `finalize`.
+- `finalize_node` uses a second `with_structured_output(ResearchNote)` model to
+  extract the typed note from the gathered conversation.
+- `messages` uses `Annotated[list[BaseMessage], add_messages]` so updates
+  **append** instead of overwrite.
+
+Two things worth knowing (both surfaced while running it):
+
+- **The model decides the tool calls, not the code.** Which URLs, how many, and
+  when to stop are all the model's choice — your graph just executes them and
+  loops. Multiple URLs happen both *batched* in one turn and *across* loop turns.
+- **No iteration cap.** This loop ends only when the model stops requesting tools
+  — a real MCP run fanned out to ~30 fetches. Add `invoke(..., {"recursion_limit": N})`
+  for a circuit breaker. Also: a `fetch_url` that prints `→` but no `← N chars`
+  **failed** (403/404/timeout) — the `except` returns an error string silently,
+  and the model adapts by trying alternates.
+
+### 11. Comparison — `compare_frameworks.py`
+
+Runs both versions on one MCP-adoption topic and prints a head-to-head table:
+wall time, input/output tokens, rough Haiku-4.5 cost, step count, and lines of
+code (`research_note_lg.py` is meaningfully longer — you write the loop yourself).
+
+```
+       you build the loop  ◀── LangGraph    |    Pydantic AI ──▶  it runs the loop
+       (more code, full control)            |    (less code, less ceremony)
+```
+
 ## Run
 
 ```bash
@@ -233,6 +293,16 @@ uv run python -m week3_langgraph_pydantic_ai.pai_tool_agent
 
 # Streaming — Mode 1 (loop hidden) then Mode 2 (nodes + events visible)
 uv run python -m week3_langgraph_pydantic_ai.pai_tool_stream_agent
+
+# --- Head-to-head ---
+# Research note — Pydantic AI version
+uv run python -m week3_langgraph_pydantic_ai.research_note_pai
+
+# Research note — LangGraph version
+uv run python -m week3_langgraph_pydantic_ai.research_note_lg
+
+# Run both on one topic + print the comparison table
+uv run python -m week3_langgraph_pydantic_ai.compare_frameworks
 ```
 
 > If you have another venv active (e.g. `hntop`), `uv run` warns and ignores it,
@@ -254,7 +324,11 @@ src/week3_langgraph_pydantic_ai/
 │   # --- Pydantic AI ---
 ├── pai_first_agent.py       # Typed-output agent, no tools
 ├── pai_tool_agent.py        # Decorated tools + injected deps; run_sync runs the loop
-└── pai_tool_stream_agent.py # agent.iter() — step the loop's nodes, stream events
+├── pai_tool_stream_agent.py # agent.iter() — step the loop's nodes, stream events
+│   # --- Head-to-head ---
+├── research_note_pai.py     # Research-note agent (Pydantic AI) + metrics
+├── research_note_lg.py      # Same agent, hand-built loop (LangGraph) + metrics
+└── compare_frameworks.py    # Runs both on one topic, prints the comparison table
 ```
 
 ### A note on the API key
