@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Agent Framework Decision Matrix</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #0a0e1a;
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+            color: #e8eaf0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            width: 800px;
+            background: linear-gradient(180deg, #0e1424 0%, #0a0e1a 100%);
+            border: 1px solid #1c2540;
+            border-radius: 16px;
+            padding: 48px;
+            box-shadow: 0 0 60px rgba(50, 184, 255, 0.08);
+        }
+
+        .brand {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: #32b8ff;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #8b94a8;
+            margin-bottom: 36px;
+        }
+
+        .matrix {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .cell {
+            padding: 24px;
+            border-radius: 10px;
+            border: 1px solid #1c2540;
+            background: #0e1424;
+        }
+
+        .label {
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #6b7494;
+            margin-bottom: 8px;
+        }
+
+        .shape {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e8eaf0;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .answer {
+            font-size: 13px;
+            color: #b8c0d4;
+            line-height: 1.6;
+        }
+
+        .pick {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .pai {
+            color: #32b8ff;
+        }
+
+        .lg {
+            color: #ff8c5a;
+        }
+
+        .raw {
+            color: #a8b5d0;
+        }
+
+        .footer {
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 1px solid #1c2540;
+            font-size: 12px;
+            color: #6b7494;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="brand">IntellAIgent · Week 3</div>
+        <h1>Agent framework decision matrix</h1>
+        <div class="subtitle">After building the same task in three implementations</div>
+
+        <div class="matrix">
+
+            <div class="row">
+                <div class="cell">
+                    <div class="label">If your workflow is</div>
+                    <div class="shape">A single agent producing typed output, possibly with tools</div>
+                </div>
+                <div class="cell">
+                    <div class="label">Reach for</div>
+                    <div class="pick pai">Pydantic AI</div>
+                    <div class="answer">Function-as-agent mental model. Type hints become schemas. Loop is hidden. ~40%
+                        less code than LangGraph for this shape.</div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="cell">
+                    <div class="label">If your workflow is</div>
+                    <div class="shape">Multi-step with branches, cycles, persistence, or human-in-the-loop</div>
+                </div>
+                <div class="cell">
+                    <div class="label">Reach for</div>
+                    <div class="pick lg">LangGraph</div>
+                    <div class="answer">Graph-as-workflow mental model. <code>interrupt()</code> and checkpointers are
+                        first-class. The verbosity is the price you pay for time travel and resumable state.</div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="cell">
+                    <div class="label">If your workflow is</div>
+                    <div class="shape">You need to understand the protocol underneath the abstractions</div>
+                </div>
+                <div class="cell">
+                    <div class="label">Reach for</div>
+                    <div class="pick raw">Raw SDK</div>
+                    <div class="answer">~80 lines for a tool-using agent. Forces you to confront the loop. You'll never
+                        see frameworks the same way after writing the loop by hand.</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            The frameworks aren't competing. They're solving different shapes of problem.
+        </div>
+
+    </div>
+</body>
+
+</html>
