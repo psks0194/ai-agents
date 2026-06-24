@@ -2,8 +2,10 @@
 
 The agent patterns again — a **third** framework: the **OpenAI Agents SDK**. Same
 canonical tasks as Weeks 1–3 (typed output, tool-use loop, a research-note agent),
-so the framework is the only variable. The week ends with a three-way bake-off
+so the framework is the only variable. Day 1 ends with a three-way bake-off
 across Pydantic AI, LangGraph, and the OpenAI Agents SDK on one identical task.
+Day 2 moves past the canonical tasks into the SDK's own multi-agent
+features — **handoffs** and **guardrails**.
 
 The throughline from the whole curriculum: an agent is a loop (`call → tool →
 result → call → final answer`). Each framework just hides or exposes that loop
@@ -17,6 +19,13 @@ the loop.**
 - ✅ Tool agent — `@function_tool` functions, `Runner` drives the loop (`tool_agent.py`)
 - ✅ Research note — the Week 3 task, OpenAI Agents SDK version (`research_note_oai.py`)
 - ✅ Three-way comparison — Pydantic AI vs LangGraph vs OpenAI SDK on one task (`compare_three.py`)
+
+## Status (Day 2 — 2026-06-24)
+
+Multi-agent orchestration — the OpenAI SDK's signature features.
+
+- ✅ Handoffs — a triage agent routes to billing/technical specialists; specialists can hand back (`handoffs.py`)
+- ✅ Guardrails — input/output tripwires that block off-topic requests and policy-violating responses (`guardrails.py`)
 
 ## Core concepts
 
@@ -32,6 +41,13 @@ The OpenAI Agents SDK has a small surface:
    (unlike Pydantic AI's `RunContext`).
 4. **Global key** — `set_default_openai_key(...)`. The SDK reads the key globally,
    *not* per-agent (there's no `api_key=` on `Agent`).
+5. **Handoffs** — `handoffs=[other_agent]` lets one agent transfer control to
+   another. The *model* decides when to hand off (driven by `instructions` +
+   each target's `handoff_description`); the SDK performs the transfer. Day 2.
+6. **Guardrails** — `input_guardrails=[…]` / `output_guardrails=[…]` run checks
+   around the agent. A guardrail returns a `GuardrailFunctionOutput`; setting
+   `tripwire_triggered=True` halts the run with a `…TripwireTriggered` exception
+   you catch. Day 2.
 
 Mental model: **`Agent` = the declaration, `Runner` = the engine.** You never
 write the loop.
@@ -79,6 +95,38 @@ a table of wall time, tokens, per-provider cost, and lines of code.
 > billing); the OpenAI version calls **OpenAI** (separate billing). A low balance
 > on either provider fails only that provider's runs, not the others.
 
+### 5. Handoffs — `handoffs.py` (Day 2)
+
+Multi-agent customer support. A **triage** agent is the entry point; it routes to
+a **billing** or **technical** specialist via `handoffs=[…]`. Specialists can hand
+*back* to triage when the topic shifts, so control flows both ways. The agents
+decide handoffs themselves through natural-language `instructions` — the framework
+manages the control transfer.
+
+The contrast with Week 2 Day 2 routing: there, *your* code dispatched to
+specialists; here the model does, and `Runner` executes it. `result.last_agent`
+tells you who ended up handling the message, and `result.new_items` carries the
+handoff trace.
+
+> Return handoffs (`billing_agent.handoffs = [triage_agent]`) are wired *after*
+> `triage_agent` is defined, to avoid a circular reference at construction time.
+
+### 6. Guardrails — `guardrails.py` (Day 2)
+
+A support agent wrapped in two tripwires, each backed by its own small classifier
+agent:
+
+- **Input guardrail** (`support_topic_guardrail`) — classifies the incoming
+  message and blocks it *before* the main agent runs if it isn't a genuine support
+  request (off-topic chat, general knowledge, prompt-injection attempts).
+- **Output guardrail** (`policy_guardrail`) — checks the agent's response and
+  withholds it if it violates policy (e.g. guaranteeing a large refund without
+  human approval, committing to timelines, giving financial/legal advice).
+
+A tripped wire raises `InputGuardrailTripwireTriggered` /
+`OutputGuardrailTripwireTriggered`, which the caller catches to show a safe
+fallback message.
+
 ## Run
 
 ```bash
@@ -93,6 +141,12 @@ uv run python -m week4_openai_mastra.research_note_oai
 
 # Three-way comparison — Pydantic AI vs LangGraph vs OpenAI SDK on one topic
 uv run python -m week4_openai_mastra.compare_three
+
+# Handoffs — triage agent routes to billing / technical specialists
+uv run python -m week4_openai_mastra.handoffs
+
+# Guardrails — input/output tripwires around a support agent
+uv run python -m week4_openai_mastra.guardrails
 ```
 
 > If another venv is active (e.g. `hntop`), `uv run` warns and ignores it,
@@ -107,7 +161,10 @@ src/week4_openai_mastra/
 ├── first_agent.py        # Smallest agent: typed output, no tools
 ├── tool_agent.py         # @function_tool tools; Runner runs the loop
 ├── research_note_oai.py  # The Week 3 research-note task, OpenAI SDK version
-└── compare_three.py      # Pydantic AI vs LangGraph vs OpenAI SDK — one task, head-to-head
+├── compare_three.py      # Pydantic AI vs LangGraph vs OpenAI SDK — one task, head-to-head
+│
+├── handoffs.py           # Multi-agent support: triage hands off to specialists (Day 2)
+└── guardrails.py         # Input/output tripwires around a support agent (Day 2)
 ```
 
 ### A note on the API key
