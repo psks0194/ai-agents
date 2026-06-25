@@ -7,6 +7,11 @@ differently. Mastra's stance: **you declare an `Agent` with its `tools`, and the
 framework runs the loop for you** — much like the OpenAI Agents SDK, but in TS and
 with a built-in model router, Studio UI, scorers, and observability.
 
+Day 1 builds the canonical tool-use agent. Day 2 goes past a single agent into
+Mastra's **workflows** — multi-step pipelines with typed contracts between steps,
+sequential chaining and parallel fan-out/fan-in — plus a **RAG** retrieval demo
+(chunking → embeddings → vector search).
+
 ## Status (Day 1 — 2026-06-24)
 
 - ✅ Tool-using agent — calculator / current-time / fetch-url, the canonical tool-use loop in Mastra (`agents/tool-agent.ts`)
@@ -17,7 +22,17 @@ with a built-in model router, Studio UI, scorers, and observability.
 
 This sits alongside the bootstrapped weather example (`weather-agent`,
 `weather-tool`, `weather-workflow`, `weather-scorer`) that ships with a new Mastra
-project. Today's work is the **tool agent** and getting it to actually run.
+project. Day 1's work is the **tool agent** and getting it to actually run.
+
+## Status (Day 2 — 2026-06-25)
+
+Workflows and RAG.
+
+- ✅ Content agents — four single-purpose agents: scout, outliner, drafter, critic (`agents/content-agent.ts`)
+- ✅ Content pipeline — a **sequential** workflow chaining them with typed step contracts (`workflows/content-workflow.ts` + `run-content-workflow.ts`)
+- ✅ Parallel critics — a **fan-out/fan-in** workflow running two critics concurrently (`workflows/parallel-critic-workflow.ts` + `run-parallel-critic.ts`)
+- ✅ RAG demo — chunking, OpenAI embeddings, LibSQL vector store, similarity retrieval (`rag-demo.ts`)
+- ✅ All agents/workflows registered in the Mastra instance; whole project typechecks clean
 
 ## The tool agent
 
@@ -79,9 +94,9 @@ prompts — one per tool — printing the answer, elapsed time, and token usage.
 > key is sitting in `.env`. (`mastra dev`/`mastra build` load `.env` on their own;
 > a raw `tsx` invocation does not.)
 
-## Issues fixed today
+## Issues fixed (Day 1)
 
-Getting the tool agent from "written" to "running" took four fixes:
+Getting the tool agent from "written" to "running" took these fixes:
 
 | # | Symptom | Cause | Fix |
 |---|---|---|---|
@@ -94,34 +109,156 @@ Getting the tool agent from "written" to "running" took four fixes:
 After these, `npx tsx src/run-tool-agent.ts` runs all three prompts and the agent
 calls the right tool each time.
 
+---
+
+# Day 2 — Workflows
+
+A Mastra **workflow** is a graph of typed **steps**. Each step is a
+`createStep({ id, inputSchema, outputSchema, execute })` — a unit with a Zod
+contract on its input and output. You wire steps together with combinators
+(`.then(...)`, `.parallel([...])`, `.branch(...)`, …) and `.commit()` the result.
+The engine validates the contract between every step, so a type mismatch in the
+chain is a compile error, not a runtime surprise.
+
+Inside a step, `execute` receives `{ inputData }` (validated against `inputSchema`)
+and returns a value matching `outputSchema`. Steps call agents via
+`agent.generate(prompt, { structuredOutput: { schema } })`, and read the typed
+result off `result.object`.
+
+## The content pipeline — sequential (`content-workflow.ts`)
+
+Four single-purpose agents from `agents/content-agent.ts`, chained in order:
+
+```
+topic → scout → outline → drafter → critic → verdict
+```
+
+| Agent | Role |
+|---|---|
+| `scoutAgent` | Finds one sharp, specific angle on the topic |
+| `outlineAgent` | Turns the angle into a hook + 3 beats + close |
+| `drafterAgent` | Writes a ~250-word post from the outline |
+| `criticAgent` | Editor verdict: ship or revise, with reasons |
+
+Each step's `outputSchema` is the next step's `inputSchema` — the typed contract is
+literally the handoff. The workflow is `.then(scout).then(outline).then(drafter)
+.then(critic).commit()`. Run it with `npx tsx src/run-content-workflow.ts`; the
+runner reads each step's output from `result.steps[id]` and the final verdict from
+`result.result`.
+
+## Parallel critics — fan-out / fan-in (`parallel-critic-workflow.ts`)
+
+Same draft, but judged on two independent dimensions **at once**:
+
+```
+topic → scout → outline → drafter ─┬─→ voice-critic ──┐
+                                   └─→ accuracy-critic ┘ → combine → verdict
+```
+
+- `.parallel([voiceCriticStep, accuracyCriticStep])` runs both critics
+  concurrently against the same draft. Each is its own dedicated `Agent`
+  (`voiceCritic`, `accuracyCritic`) scoring 1–10.
+- `.parallel(...)` produces a record **keyed by each step's `id`** — so the
+  `combine` step's input is `{ 'voice-critic': …, 'accuracy-critic': … }`, and it
+  ships only if **both** scores are ≥ 7.
+
+> **Typing gotcha worth remembering:** because the critic steps use *inline literal*
+> ids (`id: 'voice-critic'`), `.parallel(...)` preserves those exact keys, so a
+> fixed-key `z.object({ 'voice-critic', 'accuracy-critic' })` input typechecks. If
+> the step id were a `string` variable instead, the parallel output collapses to an
+> index signature (`Record<string, …>`) and the combine input must be a
+> `z.record(...)`. Literal ids are the nicer pattern.
+
+Run it with `npx tsx src/run-parallel-critic.ts`.
+
+## RAG — retrieval over notes (`rag-demo.ts`)
+
+A from-scratch **retrieval** demo (the "R" in RAG) over a few curriculum notes.
+Two phases:
+
+**Indexing** (`buildIndex`)
+1. **Chunk** — `MDocument.fromMarkdown(notes).chunk({ strategy: 'recursive',
+   maxSize: 256, overlap: 30 })`. Markdown-aware recursive splitting into ~256-unit
+   chunks that overlap by 30 so facts straddling a cut aren't orphaned.
+2. **Embed** — `embedMany({ model: openai.embedding('text-embedding-3-small') })`
+   turns each chunk into a 1536-dim vector capturing its *meaning*.
+3. **Store** — `LibSQLVector` (file-based, no external service): `createIndex({
+   dimension: 1536 })` then `upsert({ vectors, metadata })`, keeping each chunk's
+   text in `metadata` so retrieval can return readable passages.
+
+**Querying** (`query`)
+1. **Embed the question** with the *same* model (must share the vector space).
+2. **Search** — `store.query({ queryVector, topK: 2 })` returns the 2 nearest
+   chunks by cosine similarity, each with a `score` and its `metadata.text`.
+
+> This file stops at retrieval — the retrieved chunks are printed, not yet fed to
+> an LLM. To make it full RAG, add a generation step that stuffs the top chunks
+> into a prompt and asks an agent to answer grounded in them.
+>
+> **Different provider:** embeddings come from **OpenAI** (`@ai-sdk/openai`), so
+> this demo needs `OPENAI_API_KEY` — not the Anthropic key the agents use. It also
+> has no `dotenv` import, so run it as `npx tsx --env-file=.env src/rag-demo.ts`.
+
+## Recurring version-drift fixes (Day 2)
+
+Most of Day 2 was reconciling code written against older API shapes with the
+installed versions. The same handful of fixes kept recurring:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `anthropic(...)` from `@mastra/core/llm` won't resolve, `model` is `any` | Old per-model import; not installed | Model-router string `"anthropic/claude-haiku-4-5"` |
+| `Property 'id' is missing` on `new Agent({...})` | `id` is now required on `AgentConfig` | Add `id: '…'` (distinct from display `name`) |
+| `Cannot find module '../agents/content-agents'` | Wrong path/filename | `'../agents/content-agent'` (singular) |
+| `'size' does not exist` on `chunk(...)` | Renamed chunk option | `maxSize` (with `overlap`) |
+| `'connectionUrl' does not exist` on `LibSQLVector` | Config renamed + `id` now required | `{ id, url: 'file:./rag-demo.db' }` |
+| `verdict` typed `string`, not `'ship'\|'revise'` | Ternary literals widen to `string` | `('ship' as const) : ('revise' as const)` |
+| *Missing API key* when run via `tsx` | Raw `tsx` doesn't load `.env` | `import 'dotenv/config'` (or `--env-file=.env`) |
+
 ## Run
 
 ```shell
-# Standalone tool-agent runner (calculator / time / fetch-url over 3 prompts)
+# Tool agent — calculator / time / fetch-url over 3 prompts
 npx tsx src/run-tool-agent.ts
+
+# Content pipeline — scout → outline → drafter → critic (sequential)
+npx tsx src/run-content-workflow.ts
+
+# Parallel critics — voice + accuracy critics run concurrently, then combine
+npx tsx src/run-parallel-critic.ts
+
+# RAG retrieval demo — needs OPENAI_API_KEY; has no dotenv import, so pass --env-file
+npx tsx --env-file=.env src/rag-demo.ts
 
 # Mastra dev server + Studio UI (auto-loads .env)
 npm run dev    # → http://localhost:4111
 ```
 
-Needs `ANTHROPIC_API_KEY` in `week4-mastra/.env`. `npm run dev` loads it
-automatically; the standalone runner loads it via `dotenv/config`.
+Needs `ANTHROPIC_API_KEY` (agents/workflows) and `OPENAI_API_KEY` (RAG embeddings)
+in `week4-mastra/.env`. `npm run dev` loads `.env` automatically; the agent/workflow
+runners load it via `import 'dotenv/config'`; `rag-demo.ts` relies on `--env-file`.
 
 ## Architecture
 
 ```
 src/
-├── run-tool-agent.ts            # Standalone runner — dotenv + 3 prompts (today)
+├── run-tool-agent.ts                  # Runner — tool agent over 3 prompts (Day 1)
+├── run-content-workflow.ts            # Runner — sequential content pipeline (Day 2)
+├── run-parallel-critic.ts             # Runner — parallel-critic workflow (Day 2)
+├── rag-demo.ts                        # Standalone RAG retrieval demo (Day 2)
 └── mastra/
-    ├── index.ts                 # Mastra instance — registers agents/tools/workflows/scorers
+    ├── index.ts                       # Mastra instance — registers everything
     ├── agents/
-    │   ├── tool-agent.ts        # Tool-using agent: calculator / time / fetch (today)
-    │   └── weather-agent.ts     # Bootstrapped example
+    │   ├── tool-agent.ts              # Tool-using agent (Day 1)
+    │   ├── content-agent.ts           # scout / outliner / drafter / critic (Day 2)
+    │   └── weather-agent.ts           # Bootstrapped example
     ├── tools/
-    │   ├── utility-tool.ts      # calculator / current-time / fetch-url tools (today)
-    │   └── weather-tool.ts      # Bootstrapped example
-    ├── scorers/weather-scorer.ts
-    └── workflows/weather-workflow.ts
+    │   ├── utility-tool.ts            # calculator / current-time / fetch-url (Day 1)
+    │   └── weather-tool.ts            # Bootstrapped example
+    ├── workflows/
+    │   ├── content-workflow.ts        # Sequential: scout→outline→drafter→critic (Day 2)
+    │   ├── parallel-critic-workflow.ts# Fan-out/fan-in: 2 critics in parallel (Day 2)
+    │   └── weather-workflow.ts        # Bootstrapped example
+    └── scorers/weather-scorer.ts
 ```
 
 ## Conventions (see `AGENTS.md`)
