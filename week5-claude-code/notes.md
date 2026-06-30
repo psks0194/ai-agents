@@ -33,3 +33,33 @@ way, every time, without re-explaining.
 - description field drives auto-invocation — write "what AND when"
 - !`command` injects live context; $ARGUMENTS parameterizes
 - Don't skill-ify one-off tasks. ~30-use threshold is why ship-day/scaffold-day earn it.
+
+# Week 5 — Day 2: Subagents (own context window)
+
+## What I built
+
+## What surprised me
+
+## The realization
+
+## What I want to remember
+
+# Week 5 — Day 3: Hooks (deterministic enforcement)
+
+## What I built
+
+## What surprised me
+
+## The realization
+
+## What I want to remember
+
+# Week 5 — Day 4: MCP (external systems)
+
+## What I built
+
+## What surprised me
+
+## The realization
+
+## What I want to remember
