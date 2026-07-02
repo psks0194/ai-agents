@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>The Claude Code Extensibility Stack</title>
+    <style>
+        :root {
+            --bg: #061015;
+            --bg2: #0a1a22;
+            --line: #15303a;
+            --ink: #e8f4f4;
+            --muted: #6f8a92;
+            --cyan: #2fe6e0;
+            --magenta: #ff4fd8;
+            --amber: #ffb35a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1600px;
+            height: 900px;
+            background: radial-gradient(circle at 30% 15%, #0a1c24 0%, #061015 70%);
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--ink);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--line) 1px, transparent 1px);
+            background-size: 64px 64px;
+            opacity: 0.16;
+        }
+
+        .wrap {
+            position: relative;
+            padding: 56px 72px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .eyebrow {
+            align-self: flex-start;
+            font-size: 15px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--amber);
+            border: 1px solid var(--amber);
+            padding: 5px 13px;
+            border-radius: 4px;
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            font-size: 46px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 4px;
+        }
+
+        .sub {
+            font-size: 19px;
+            color: var(--muted);
+            margin-bottom: 30px;
+        }
+
+        .stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .layer {
+            display: grid;
+            grid-template-columns: 260px 1fr 150px;
+            gap: 22px;
+            align-items: center;
+            background: var(--bg2);
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            padding: 18px 26px;
+        }
+
+        .layer.enforce {
+            border-color: var(--cyan);
+            box-shadow: 0 0 26px rgba(47, 230, 224, 0.10);
+        }
+
+        .lname {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .lname small {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 1px;
+            margin-top: 3px;
+        }
+
+        .ldesc {
+            font-size: 17px;
+            color: #a9c0c7;
+            line-height: 1.45;
+        }
+
+        .tag {
+            justify-self: end;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            color: var(--muted);
+        }
+
+        .tag.guarantee {
+            color: var(--cyan);
+            border-color: var(--cyan);
+        }
+
+        .c1 {
+            color: var(--amber);
+        }
+
+        .c2 {
+            color: var(--magenta);
+        }
+
+        .c3 {
+            color: var(--cyan);
+        }
+
+        .footer {
+            margin-top: 26px;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            color: var(--muted);
+        }
+
+        .footer .brand {
+            color: var(--cyan);
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <span class="eyebrow">IntellAIgent · Dispatch</span>
+        <h1>The harness, not the model</h1>
+        <div class="sub">Five layers that turn Claude Code from autocomplete into a system — and the one that gives a
+            guarantee.</div>
+
+        <div class="stack">
+            <div class="layer">
+                <div class="lname c1">CLAUDE.md<small>THE CONSTITUTION</small></div>
+                <div class="ldesc">Short, always-true facts read every session. Conventions, build commands, the
+                    never-touch-.env rule.</div>
+                <div class="tag">Context</div>
+            </div>
+            <div class="layer">
+                <div class="lname c1">Skills<small>THE PLAYBOOKS</small></div>
+                <div class="ldesc">Repeated rituals encoded once, invoked with a slash command. Load on demand — long
+                    playbooks cost nothing until needed.</div>
+                <div class="tag">Hope</div>
+            </div>
+            <div class="layer">
+                <div class="lname c2">Subagents<small>THE DELEGATES</small></div>
+                <div class="ldesc">Isolated context windows for exploration and parallel work. Orchestrator-workers, one
+                    altitude up. ~7x the tokens.</div>
+                <div class="tag">Hope</div>
+            </div>
+            <div class="layer enforce">
+                <div class="lname c3">Hooks<small>THE ENFORCEMENT</small></div>
+                <div class="ldesc">Deterministic shell scripts on lifecycle events. Fire regardless of model intent. The
+                    model cannot forget.</div>
+                <div class="tag guarantee">Guarantee</div>
+            </div>
+            <div class="layer">
+                <div class="lname c2">MCP<small>THE REACH</small></div>
+                <div class="ldesc">Connection to everything past the filesystem — GitHub, databases, browsers. Governed
+                    by the same permissions and hooks.</div>
+                <div class="tag">Connect</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span>The model is the commodity. The harness is the craft — and the skill is knowing when it's worth the
+                overhead.</span>
+            <span><span class="brand">@intellaigent</span> · Decode the Future 🔹</span>
+        </div>
+    </div>
+</body>
+
+</html>
