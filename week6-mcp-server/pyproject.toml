@@ -1,0 +1,12 @@
+[project]
+name = "week6-mcp-server"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastmcp>=3.4.2",
+    "feedparser>=6.0.12",
+    "httpx>=0.28.1",
+    "ruff>=0.15.20",
+]
