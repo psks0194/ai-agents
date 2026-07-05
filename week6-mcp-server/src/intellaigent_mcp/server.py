@@ -311,5 +311,124 @@ async def draft_thread(
     )
 
 
+@mcp.resource("voice://intellaigent")
+def voice_guide() -> str:
+    """The IntellAIgent voice guide — the practitioner-contrarian rules.
+
+    Read-only reference the client can pull before drafting or reviewing any
+    content, so the voice stays consistent across tools and sessions.
+    """
+    return """# IntellAIgent Voice Guide
+
+## Core stance
+Practitioner-contrarian. You've built the thing you're writing about and you
+measured it. You pick a defensible side and defend it. You are not a
+thought-leader narrating trends from the outside.
+
+## Rules
+- Concrete over abstract. Name the tool, the number, the specific tradeoff.
+- No hype words: unlock, leverage, revolutionize, seamless, game-changer,
+  cutting-edge, supercharge, paradigm, synergy.
+- No empty intensifiers: very, really, truly, deeply, incredibly.
+- Measure honestly. State the cost and the failure, not just the win.
+- Short, punchy sentences. Cut hedging. Say the claim or don't.
+- Walk back your own verdict when the evidence says so — that earns trust.
+
+## Structure for a post
+Hook that reframes → the concrete evidence → the honest cost → the thesis
+landing on judgment, not tooling.
+
+## The thesis spine
+"The moat moved up the stack." The model is the commodity; the craft is what
+you build around it, and the judgment of when it's worth the overhead.
+
+## Footer
+@intellaigent · Decode the Future 🔹
+"""
+
+
+# Card template structures, keyed by name. In a real setup these might live
+# in a file or DB; inlined here for clarity.
+_CARD_TEMPLATES = {
+    "dispatch": {
+        "name": "dispatch",
+        "eyebrow_style": "uppercase, amber, bordered pill, top-left",
+        "headline_size_px": 52,
+        "layout": "headline top, subtitle below, single accent, grid overlay",
+        "use_for": "single-claim posts, hot takes, theses",
+    },
+    "matrix": {
+        "name": "matrix",
+        "eyebrow_style": "uppercase, amber, bordered pill, top-left",
+        "headline_size_px": 46,
+        "layout": "headline, then stacked comparison rows (condition | pick)",
+        "use_for": "decision matrices, comparisons, 'which X for Y' posts",
+    },
+    "stack": {
+        "name": "stack",
+        "eyebrow_style": "uppercase, amber, bordered pill, top-left",
+        "headline_size_px": 46,
+        "layout": "headline, then vertical layered rows, one row emphasized",
+        "use_for": "layered concepts, hierarchies, 'the X, not the Y' posts",
+    },
+}
+
+
+@mcp.resource("card-template://{name}")
+def card_template(name: str) -> dict:
+    """Return the structure spec for a named IntellAIgent card template.
+
+    Available templates: dispatch (single-claim), matrix (comparison),
+    stack (layered concept). The client can pull the right one before
+    calling generate_card_spec so the layout matches the post type.
+
+    Args:
+        name: The template name — 'dispatch', 'matrix', or 'stack'.
+    """
+    template = _CARD_TEMPLATES.get(name.lower())
+    if template is None:
+        available = ", ".join(sorted(_CARD_TEMPLATES))
+        raise ValueError(f"No card template named '{name}'. Available: {available}.")
+    return template
+
+
+@mcp.prompt
+def angle_from_headline(headline: str, summary: str = "") -> str:
+    """Generate IntellAIgent angles from a headline. Surfaces as a slash command.
+
+    Args:
+        headline: The source headline to find angles on.
+        summary: Optional short summary for more context.
+    """
+    return (
+        f"Read the IntellAIgent voice guide at voice://intellaigent first.\n\n"
+        f"Source headline: {headline}\n"
+        f"{f'Summary: {summary}' if summary else ''}\n\n"
+        f"Give me 3 sharp, practitioner-contrarian angles on this. For each: "
+        f"one declarative sentence stating the angle, then one sentence on why "
+        f"it lands with a builder audience. No hype words. Pick defensible, "
+        f"specific takes — not 'X is the future'."
+    )
+
+
+@mcp.prompt
+def thread_from_notes(notes: str, num_tweets: int = 6) -> str:
+    """Draft an IntellAIgent X thread from rough notes. Surfaces as a slash command.
+
+    Args:
+        notes: Your rough notes or bullet points for the thread.
+        num_tweets: How many tweets (default 6).
+    """
+    return (
+        f"Read the IntellAIgent voice guide at voice://intellaigent first, then "
+        f"draft a {num_tweets}-tweet X thread from these notes.\n\n"
+        f"Notes:\n{notes}\n\n"
+        f"Rules: each tweet stands alone; concrete over abstract; no hype words; "
+        f"measure honestly including costs; short punchy sentences. Number each "
+        f"tweet like '1/'. After drafting, run check_voice on the result and "
+        f"fix anything it flags."
+    )
+
+
 if __name__ == "__main__":
     mcp.run()  # stdio transport by default

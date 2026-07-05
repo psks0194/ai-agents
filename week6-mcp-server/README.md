@@ -27,6 +27,14 @@ with **FastMCP 3**, the Pythonic way to author MCP servers.
 - ✅ `draft_thread` — the first **LLM-backed** tool: calls Anthropic to draft a thread, streaming progress via `Context` (`server.py`)
 - ✅ End-to-end run — `fetch_feed → draft_thread → check_voice → generate_card_spec` composed from an MCP client
 
+**Day 3 — 2026-07-05**
+
+- ✅ Resource — `voice://intellaigent`, serves the voice guide as read-only context the client pulls before drafting/reviewing (`server.py`)
+- ✅ Templated resource — `card-template://{name}`, a parameterized URI returning the `dispatch` / `matrix` / `stack` layout specs from one function (`server.py`)
+- ✅ Prompt — `angle_from_headline`, surfaces as a slash command that asks for 3 practitioner-contrarian angles on a headline (`server.py`)
+- ✅ Prompt — `thread_from_notes`, slash command that drafts an N-tweet thread from rough notes, then self-lints via `check_voice` (`server.py`)
+- ✅ All three MCP primitives now live — **tools**, **resources**, **prompts**
+
 ## Layout
 
 ```
@@ -84,8 +92,16 @@ FastMCP has a small surface:
 5. **Errors** — raise `ToolError` for a clean, client-visible failure (e.g. a
    too-long headline, or a missing `ANTHROPIC_API_KEY`).
 6. **Transport** — `mcp.run()` uses **stdio** by default (the client spawns the
-   server as a subprocess and talks over stdin/stdout). Resources and prompts —
-   the other two MCP primitives — come in later days.
+   server as a subprocess and talks over stdin/stdout).
+7. **`@mcp.resource`** — decorates a function into a read-only resource addressed
+   by URI. `voice://intellaigent` serves the voice guide; `card-template://{name}`
+   is a *templated* resource — the `{name}` placeholder becomes a parameter, so one
+   function serves `dispatch`, `matrix`, and `stack`. Resources are context the
+   client *pulls*, not actions it *invokes* — the read side of the protocol.
+8. **`@mcp.prompt`** — decorates a function into a reusable prompt that surfaces in
+   the client as a slash command. `angle_from_headline` and `thread_from_notes`
+   return the fully-composed instruction text (pointing the model at the voice
+   resource first), packaging a multi-step workflow into one command.
 
 ## Current tools
 
@@ -106,6 +122,30 @@ FastMCP has a small surface:
 
 These compose end-to-end: `fetch_feed` for source → `draft_thread` for the copy →
 `check_voice` to lint it → `generate_card_spec` for the visual.
+
+## Resources
+
+Read-only context the client pulls by URI (no model call, no side effects):
+
+- **`voice://intellaigent`** — the voice guide as text. Pulled before drafting or
+  linting so the practitioner-contrarian rules stay consistent across tools and
+  sessions, instead of being re-pasted into every prompt.
+- **`card-template://{name}`** — a *templated* resource: the `{name}` in the URI is
+  a parameter. Returns the structure spec (`eyebrow_style`, `headline_size_px`,
+  `layout`, `use_for`) for `dispatch` (single-claim), `matrix` (comparison), or
+  `stack` (layered concept). An unknown name raises `ValueError` listing the valid ones.
+
+## Prompts
+
+Reusable workflows that surface in the client as slash commands. Both are pure text
+composition — they don't call a model themselves; they hand the client a ready
+instruction the model then executes with the server's own tools and resources.
+
+- **`angle_from_headline(headline, summary="")`** — returns 3 sharp, defensible
+  angles on a headline, each with a one-line rationale for a builder audience.
+- **`thread_from_notes(notes, num_tweets=6)`** — drafts an N-tweet thread from rough
+  notes, points the model at `voice://intellaigent` first, and tells it to self-lint
+  with `check_voice` after drafting.
 
 ## Configuration
 
