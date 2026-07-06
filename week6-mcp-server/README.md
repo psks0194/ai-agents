@@ -34,6 +34,7 @@ with **FastMCP 3**, the Pythonic way to author MCP servers.
 - ✅ Prompt — `angle_from_headline`, surfaces as a slash command that asks for 3 practitioner-contrarian angles on a headline (`server.py`)
 - ✅ Prompt — `thread_from_notes`, slash command that drafts an N-tweet thread from rough notes, then self-lints via `check_voice` (`server.py`)
 - ✅ All three MCP primitives now live — **tools**, **resources**, **prompts**
+- ✅ HTTP transport — same server served over streamable HTTP via `fastmcp run … --transport http` (no code change) and registered in Claude Code as `intellaigent-http` alongside the stdio entry
 
 ## Layout
 
@@ -45,6 +46,22 @@ src/intellaigent_mcp/
 main.py         # placeholder entrypoint (unused by the server)
 ```
 
+## Setup
+
+```bash
+uv sync   # install deps into this week's .venv
+```
+
+Then add `ANTHROPIC_API_KEY` (only `draft_thread` needs it) to the **shared
+repo-root `.env`** — `config.py` reads that file, not a week6-local one:
+
+```bash
+cp ../.env.example ../.env   # then fill in the key
+```
+
+[`.env.example`](.env.example) in this folder documents the exact vars this
+server reads; real values live in the repo-root `.env`.
+
 ## Commands
 
 This week uses `uv` and its own `.venv`. Run from `week6-mcp-server/`. If another
@@ -53,14 +70,18 @@ venv is active (e.g. `hntop`), `deactivate` first — `uv run` targets this proj
 clearer from a clean shell.
 
 ```bash
-# Run the server directly (stdio transport)
-uv run fastmcp run src/intellaigent_mcp/server.py
+# Run the server directly (stdio transport, the default)
+uv run fastmcp run src/intellaigent_mcp/server.py:mcp
+
+# Run over HTTP (remote/shared — clients connect to a long-running process)
+uv run fastmcp run src/intellaigent_mcp/server.py:mcp --transport http --host 127.0.0.1 --port 8000
 
 # Develop with the MCP Inspector UI in the browser
 uv run fastmcp dev inspector src/intellaigent_mcp/server.py
 
-# Install into Claude Code
-uv run fastmcp install claude-code src/intellaigent_mcp/server.py
+# Install into Claude Code (stdio, with the runtime deps)
+uv run fastmcp install claude-code src/intellaigent_mcp/server.py \
+  --with httpx --with feedparser --with anthropic --with pydantic-settings
 
 # Inspect the server's tools/resources without running a client
 uv run fastmcp inspect src/intellaigent_mcp/server.py
@@ -151,4 +172,13 @@ instruction the model then executes with the server's own tools and resources.
 
 `draft_thread` needs `ANTHROPIC_API_KEY`. `config.py` uses `pydantic-settings` to
 read the **single repo-root `.env`** (shared across every Python week), plus an
-optional `DEFAULT_MODEL` override. The other three tools run without any key.
+optional `DEFAULT_MODEL` override (defaults to `claude-haiku-4-5`). The other three
+tools run without any key. See [`.env.example`](.env.example) for the exact vars this
+server reads — real values go in the repo-root `.env`, not a week6-local one.
+
+## Tests
+
+```bash
+uv run pytest -m "not integration"   # fast unit tests (no network, no LLM)
+uv run pytest -m integration         # network + LLM tests
+```

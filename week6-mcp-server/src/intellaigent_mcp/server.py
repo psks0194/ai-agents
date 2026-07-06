@@ -148,7 +148,6 @@ _HYPE_WORDS = {
     "synergy",
     "disruptive",
     "delve",
-    "harness",
     "unleash",
     "transformative",
     "next-level",

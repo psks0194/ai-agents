@@ -21,3 +21,15 @@ build-backend = "uv_build"
 # Project name is week6-mcp-server but the importable package is
 # intellaigent_mcp, so point the backend at the module explicitly.
 module-name = "intellaigent_mcp"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "integration: tests that hit the network or an LLM (deselect with -m 'not integration')",
+]
