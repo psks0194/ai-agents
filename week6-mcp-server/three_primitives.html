@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>The Three MCP Primitives</title>
+    <style>
+        :root {
+            --bg: #061015;
+            --bg2: #0a1a22;
+            --line: #15303a;
+            --ink: #e8f4f4;
+            --muted: #6f8a92;
+            --cyan: #2fe6e0;
+            --magenta: #ff4fd8;
+            --amber: #ffb35a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1600px;
+            height: 900px;
+            background: radial-gradient(circle at 30% 15%, #0a1c24 0%, #061015 70%);
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--ink);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--line) 1px, transparent 1px);
+            background-size: 64px 64px;
+            opacity: 0.16;
+        }
+
+        .wrap {
+            position: relative;
+            padding: 60px 72px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .eyebrow {
+            align-self: flex-start;
+            font-size: 15px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--amber);
+            border: 1px solid var(--amber);
+            padding: 5px 13px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 4px;
+        }
+
+        .sub {
+            font-size: 20px;
+            color: var(--muted);
+            margin-bottom: 40px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            flex: 1;
+        }
+
+        .card {
+            background: var(--bg2);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 32px 28px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card .icon {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+
+        .card h2 {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .card .analogy {
+            font-size: 17px;
+            color: var(--muted);
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+
+        .card .row {
+            font-size: 16px;
+            color: #a9c0c7;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .card .row b {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .c-tool {
+            border-top: 3px solid var(--cyan);
+        }
+
+        .c-tool .icon,
+        .c-tool h2 {
+            color: var(--cyan);
+        }
+
+        .c-res {
+            border-top: 3px solid var(--amber);
+        }
+
+        .c-res .icon,
+        .c-res h2 {
+            color: var(--amber);
+        }
+
+        .c-prompt {
+            border-top: 3px solid var(--magenta);
+        }
+
+        .c-prompt .icon,
+        .c-prompt h2 {
+            color: var(--magenta);
+        }
+
+        .footer {
+            margin-top: 34px;
+            padding-top: 22px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            color: var(--muted);
+        }
+
+        .footer .brand {
+            color: var(--cyan);
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <span class="eyebrow">IntellAIgent · Dispatch</span>
+        <h1>The three MCP primitives</h1>
+        <div class="sub">What to expose as what — and why the best servers keep the thinking in the client.</div>
+
+        <div class="cards">
+            <div class="card c-tool">
+                <div class="icon">The hands</div>
+                <h2>Tools</h2>
+                <div class="analogy">POST-like</div>
+                <div class="row"><b>Who:</b> the model chooses</div>
+                <div class="row"><b>What:</b> an action, often with side effects</div>
+                <div class="row"><b>Use for:</b> fetch, create, transform, validate</div>
+            </div>
+
+            <div class="card c-res">
+                <div class="icon">The shelf</div>
+                <h2>Resources</h2>
+                <div class="analogy">GET-like</div>
+                <div class="row"><b>Who:</b> the model pulls</div>
+                <div class="row"><b>What:</b> read-only data, URI-addressable</div>
+                <div class="row"><b>Use for:</b> reference docs, templates, records</div>
+            </div>
+
+            <div class="card c-prompt">
+                <div class="icon">The playbook</div>
+                <h2>Prompts</h2>
+                <div class="analogy">Slash command</div>
+                <div class="row"><b>Who:</b> the user triggers</div>
+                <div class="row"><b>What:</b> a parameterized template</div>
+                <div class="row"><b>Use for:</b> deliberate, repeatable workflows</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span>Decide by two questions: who initiates, and is it an action or data? The brain stays in the
+                client.</span>
+            <span><span class="brand">@intellaigent</span> · Decode the Future 🔹</span>
+        </div>
+    </div>
+</body>
+
+</html>
