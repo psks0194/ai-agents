@@ -11,10 +11,19 @@ result → call → final answer`). An eval wraps that loop — run the system o
 known case, score the output against something you can defend. Two kinds of
 scoring show up here: **detection** against ground truth (precision/recall/F1)
 and **property checks** on subjective output (validity you can assert in code).
-LLM-as-judge scoring is deliberately deferred to Day 2 — the harness is already
-async so judges drop in without changes.
+Day 2 adds the third kind — **LLM-as-judge** scoring for subjective quality you
+can't assert in code — and treats the judge itself as an instrument to be
+calibrated and stress-tested, not trusted on sight.
 
 ## Status
+
+**Day 2 — 2026-07-12**
+
+- ✅ Judge — LLM-as-judge for thread quality built to fight known failure modes: an **anchored 1-5 rubric** (each level described) against score-clustering, **reasoning before score**, structured `JudgeVerdict` output, temperature 0, and defensive JSON parsing so one malformed response can't kill a run (`judge.py`)
+- ✅ Calibration — scores the judge against **human labels** (a 6-thread set spanning 1-5): exact/within-1 agreement, MAE, Pearson correlation, and good-vs-bad separation, then prints a verdict — trust it for absolute grading, relative comparison only, or not yet (`calibrate_judge.py`)
+- ✅ Stability — judges the *same* borderline thread N times at temp 0 to expose the run-to-run **noise floor** (spread/stdev); borderline cases are where a judge wavers most and where you'd lean on it to break ties (`judge_stability.py`)
+- ✅ `eval_judge` — drops the judge in as a scorer **alongside** yesterday's code scorers, reusing the Day 1 draft cases: a deterministic `count_ok` next to a subjective `judge` score, proving the async harness takes judges with no changes (`eval_judge.py`)
+- ✅ Config — local `pydantic-settings` for the judge's `anthropic_api_key` + `judge_model` (`config.py`)
 
 **Day 1 — 2026-07-08**
 
@@ -32,6 +41,11 @@ src/evals/
   sut.py                 # locates & imports the week-6 server as the system under test
   eval_check_voice.py    # detection eval — ground truth, precision/recall/F1
   eval_draft_thread.py   # property-check eval — validity of subjective output
+  judge.py               # LLM-as-judge: anchored rubric, reasoning-first, structured verdict
+  calibrate_judge.py     # judge vs human labels — agreement, correlation, separation
+  judge_stability.py     # same thread N times — expose the temp-0 noise floor
+  eval_judge.py          # judge as a scorer next to the Day 1 code scorers
+  config.py              # judge model + API key (pydantic-settings)
 main.py                  # placeholder entrypoint (unused by the evals)
 ```
 
@@ -53,7 +67,18 @@ relative to the repo root — that sibling week must be present on disk.
 ```bash
 uv run python -m evals.eval_check_voice    # deterministic, no API key
 uv run python -m evals.eval_draft_thread   # one Haiku call per case, needs the key
+
+# Day 2 — LLM-as-judge (all need the key)
+uv run python -m evals.calibrate_judge     # judge vs human labels — agreement, correlation
+uv run python -m evals.judge_stability     # same thread ×5 — the temp-0 noise floor
+uv run python -m evals.eval_judge          # judge as a scorer beside the code scorers
 ```
 
 Each prints a per-case table and its aggregate metrics — precision/recall/F1 for
-the detection eval, per-property pass rates for the draft eval.
+the detection eval, per-property pass rates for the draft eval, and for Day 2 the
+judge's agreement/correlation/separation and its run-to-run spread.
+
+The judge calls the Anthropic API directly (not through the week-6 server), so
+Day 2 reads `ANTHROPIC_API_KEY` and an optional `JUDGE_MODEL` via this project's
+own `config.py` — set `JUDGE_MODEL` to your account's current Sonnet-tier model
+string (the default is `claude-sonnet-4-5`).
