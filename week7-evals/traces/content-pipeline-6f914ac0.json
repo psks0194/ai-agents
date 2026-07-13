@@ -1,0 +1,52 @@
+{
+  "name": "content-pipeline",
+  "span_id": "6f914ac0",
+  "duration_s": 9.0,
+  "attributes": {},
+  "children": [
+    {
+      "name": "angle",
+      "span_id": "8c3b7246",
+      "duration_s": 3.047,
+      "attributes": {
+        "headline": "This game-changing AI tool will transform everything",
+        "angle": "The productivity claims will likely collapse once early adopters hit the tool's actual constraints and integration friction in real workflows."
+      },
+      "children": [
+        {
+          "name": "llm.angle",
+          "span_id": "1690ba8e",
+          "duration_s": 3.014,
+          "attributes": {
+            "model": "claude-haiku-4-5",
+            "input_tokens": 56,
+            "output_tokens": 26,
+            "output": "The productivity claims will likely collapse once early adopters hit the tool's actual constraints and integration friction in real workflows."
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "draft",
+      "span_id": "89c24383",
+      "duration_s": 5.917,
+      "attributes": {
+        "num_tweets": 6,
+        "tweet_count": 6,
+        "output": "1/ Most \"productivity\" tools measure gains in a vacuum. Spreadsheet says +40% efficiency. Reality: your workflow has 6 integration points. Tool handles 2 of them.\n2/ Early adopters love new tools. The"
+      },
+      "children": []
+    },
+    {
+      "name": "check_voice",
+      "span_id": "107c99e8",
+      "duration_s": 0.037,
+      "attributes": {
+        "passed": true,
+        "issue_count": 0
+      },
+      "children": []
+    }
+  ]
+}

@@ -16,9 +16,17 @@ can't assert in code — and treats the judge itself as an instrument to be
 calibrated and stress-tested, not trusted on sight. Day 3 puts the scorers to
 work: an **A/B comparison** of two prompt variants that refuses to over-read
 deltas inside the noise, and a **regression gate** that blocks a ship on
-deterministic pass/fail alone.
+deterministic pass/fail alone. Day 4 turns to **observability** — a from-scratch
+tracing layer (nested spans, timings, token counts) so that when a multi-step
+pipeline's output is bad, the trace tells you *which stage* drifted.
 
 ## Status
+
+**Day 4 — 2026-07-13**
+
+- ✅ Tracer — a tiny from-scratch tracing layer: `Span` (named, timed, with attributes and children), async-safe nesting via a `ContextVar`, a `span()` context manager that records errors and restores the parent on exit, plus JSON `save()` and a console `print_tree()` — the same primitives every observability tool shares (`tracer.py`)
+- ✅ `traced_pipeline` — a 3-stage content pipeline (angle → draft → voice-lint) wrapped in spans, with each LLM call a child span carrying model + input/output token counts; reuses the Day 3 `draft_with_prompt`/`PROMPT_A` and the week-6 `check_voice` tool, so a bad final output is traceable to the stage that caused it (`traced_pipeline.py`)
+- ✅ Trace artifacts — runs persist to `traces/*.json`, the artifact you debug from later (`traces/`)
 
 **Day 3 — 2026-07-12**
 
@@ -57,7 +65,10 @@ src/evals/
   variants.py            # version-swappable prompts (A baseline vs. B candidate)
   compare_variants.py    # noise-aware A/B — averaged judge samples vs. a noise floor
   regression_gate.py     # deterministic pass/fail gate; non-zero exit blocks a ship
+  tracer.py              # from-scratch tracing: Span, nested spans, JSON + tree output
+  traced_pipeline.py     # 3-stage pipeline (angle → draft → lint), fully traced
   config.py              # judge model + API key (pydantic-settings)
+traces/                  # persisted trace artifacts (JSON), one file per run
 main.py                  # placeholder entrypoint (unused by the evals)
 ```
 
@@ -88,6 +99,9 @@ uv run python -m evals.eval_judge          # judge as a scorer beside the code s
 # Day 3 — using the scorers to make decisions
 uv run python -m evals.compare_variants    # A/B two prompts, averaged judge vs. noise floor
 uv run python -m evals.regression_gate     # deterministic pass/fail; exits non-zero on regression
+
+# Day 4 — tracing / observability
+uv run python -m evals.traced_pipeline     # runs the 3-stage pipeline, prints + saves the trace
 ```
 
 Each prints a per-case table and its aggregate metrics — precision/recall/F1 for
@@ -95,7 +109,8 @@ the detection eval, per-property pass rates for the draft eval, and for Day 2 th
 judge's agreement/correlation/separation and its run-to-run spread. Day 3's
 `compare_variants` prints per-variant means with a delta-vs-noise-floor verdict,
 and `regression_gate` prints a PASS/FAIL line per threshold and exits non-zero if
-any bar is missed.
+any bar is missed. Day 4's `traced_pipeline` prints the span tree (per-stage
+timings, token counts) and writes the full trace to `traces/*.json`.
 
 The judge calls the Anthropic API directly (not through the week-6 server), so
 Day 2 reads `ANTHROPIC_API_KEY` and an optional `JUDGE_MODEL` via this project's

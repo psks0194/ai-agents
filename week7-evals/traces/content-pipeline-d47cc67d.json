@@ -1,0 +1,52 @@
+{
+  "name": "content-pipeline",
+  "span_id": "d47cc67d",
+  "duration_s": 5.919,
+  "attributes": {},
+  "children": [
+    {
+      "name": "angle",
+      "span_id": "6e4ffc42",
+      "duration_s": 1.263,
+      "attributes": {
+        "headline": "Most AI eval dashboards measure the wrong thing",
+        "angle": "**The real problem isn't bad metrics\u2014it's that teams optimize for measurable proxies instead of shipping products that users actually keep using.**"
+      },
+      "children": [
+        {
+          "name": "llm.angle",
+          "span_id": "59a8681a",
+          "duration_s": 1.229,
+          "attributes": {
+            "model": "claude-haiku-4-5",
+            "input_tokens": 58,
+            "output_tokens": 32,
+            "output": "**The real problem isn't bad metrics\u2014it's that teams optimize for measurable proxies instead of shipping products that users actually keep using.**"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "draft",
+      "span_id": "0fa99643",
+      "duration_s": 4.621,
+      "attributes": {
+        "num_tweets": 6,
+        "tweet_count": 6,
+        "output": "1/ Your eval dashboard shows 94% accuracy. Your users stopped opening the app. These aren't contradictory\u2014they're exactly what happens when you optimize the proxy instead of the thing.\n2/ Metrics are "
+      },
+      "children": []
+    },
+    {
+      "name": "check_voice",
+      "span_id": "18a91463",
+      "duration_s": 0.035,
+      "attributes": {
+        "passed": true,
+        "issue_count": 0
+      },
+      "children": []
+    }
+  ]
+}
