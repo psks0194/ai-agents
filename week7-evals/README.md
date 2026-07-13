@@ -13,9 +13,18 @@ scoring show up here: **detection** against ground truth (precision/recall/F1)
 and **property checks** on subjective output (validity you can assert in code).
 Day 2 adds the third kind — **LLM-as-judge** scoring for subjective quality you
 can't assert in code — and treats the judge itself as an instrument to be
-calibrated and stress-tested, not trusted on sight.
+calibrated and stress-tested, not trusted on sight. Day 3 puts the scorers to
+work: an **A/B comparison** of two prompt variants that refuses to over-read
+deltas inside the noise, and a **regression gate** that blocks a ship on
+deterministic pass/fail alone.
 
 ## Status
+
+**Day 3 — 2026-07-12**
+
+- ✅ Variants — version-swappable drafting that varies **only** the system prompt (baseline vs. a "concrete-opener" candidate), mirroring the server's `draft_thread` logic so the comparison is honest while the server stays untouched (`variants.py`)
+- ✅ `compare_variants` — noise-aware A/B: drafts each variant once per case, **averages K judge samples** to shrink run-to-run noise, aggregates per variant, then interprets the delta against a **noise floor** — small deltas are called noise, not improvements, and deterministic regressions (`count_ok`, `within_280`) are reported bluntly (`compare_variants.py`)
+- ✅ `regression_gate` — fast, **deterministic-only** pass/fail on `draft_thread` validity (count, length, voice-linter pass rate) with explicit thresholds; exits non-zero on regression so it can block a commit/deploy — the quality analogue of a hook (`regression_gate.py`)
 
 **Day 2 — 2026-07-12**
 
@@ -45,6 +54,9 @@ src/evals/
   calibrate_judge.py     # judge vs human labels — agreement, correlation, separation
   judge_stability.py     # same thread N times — expose the temp-0 noise floor
   eval_judge.py          # judge as a scorer next to the Day 1 code scorers
+  variants.py            # version-swappable prompts (A baseline vs. B candidate)
+  compare_variants.py    # noise-aware A/B — averaged judge samples vs. a noise floor
+  regression_gate.py     # deterministic pass/fail gate; non-zero exit blocks a ship
   config.py              # judge model + API key (pydantic-settings)
 main.py                  # placeholder entrypoint (unused by the evals)
 ```
@@ -72,11 +84,18 @@ uv run python -m evals.eval_draft_thread   # one Haiku call per case, needs the 
 uv run python -m evals.calibrate_judge     # judge vs human labels — agreement, correlation
 uv run python -m evals.judge_stability     # same thread ×5 — the temp-0 noise floor
 uv run python -m evals.eval_judge          # judge as a scorer beside the code scorers
+
+# Day 3 — using the scorers to make decisions
+uv run python -m evals.compare_variants    # A/B two prompts, averaged judge vs. noise floor
+uv run python -m evals.regression_gate     # deterministic pass/fail; exits non-zero on regression
 ```
 
 Each prints a per-case table and its aggregate metrics — precision/recall/F1 for
 the detection eval, per-property pass rates for the draft eval, and for Day 2 the
-judge's agreement/correlation/separation and its run-to-run spread.
+judge's agreement/correlation/separation and its run-to-run spread. Day 3's
+`compare_variants` prints per-variant means with a delta-vs-noise-floor verdict,
+and `regression_gate` prints a PASS/FAIL line per threshold and exits non-zero if
+any bar is missed.
 
 The judge calls the Anthropic API directly (not through the week-6 server), so
 Day 2 reads `ANTHROPIC_API_KEY` and an optional `JUDGE_MODEL` via this project's
