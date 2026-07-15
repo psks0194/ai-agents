@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>The AI Measurement Loop</title>
+    <style>
+        :root {
+            --bg: #061015;
+            --bg2: #0a1a22;
+            --line: #15303a;
+            --ink: #e8f4f4;
+            --muted: #6f8a92;
+            --cyan: #2fe6e0;
+            --magenta: #ff4fd8;
+            --amber: #ffb35a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 1600px;
+            height: 900px;
+            background: radial-gradient(circle at 30% 15%, #0a1c24 0%, #061015 70%);
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--ink);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--line) 1px, transparent 1px);
+            background-size: 64px 64px;
+            opacity: 0.16;
+        }
+
+        .wrap {
+            position: relative;
+            padding: 60px 72px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .eyebrow {
+            align-self: flex-start;
+            font-size: 15px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--amber);
+            border: 1px solid var(--amber);
+            padding: 5px 13px;
+            border-radius: 4px;
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 4px;
+        }
+
+        .sub {
+            font-size: 20px;
+            color: var(--muted);
+            margin-bottom: 44px;
+        }
+
+        .flow {
+            display: flex;
+            align-items: stretch;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .stage {
+            flex: 1;
+            background: var(--bg2);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 30px 24px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .stage .num {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        .stage h2 {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .stage .what {
+            font-size: 17px;
+            color: #a9c0c7;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            flex: 1;
+        }
+
+        .stage .tool {
+            font-size: 14px;
+            color: var(--muted);
+            border-top: 1px solid var(--line);
+            padding-top: 12px;
+        }
+
+        .s1 {
+            border-top: 3px solid var(--cyan);
+        }
+
+        .s1 h2,
+        .s1 .num {
+            color: var(--cyan);
+        }
+
+        .s2 {
+            border-top: 3px solid var(--amber);
+        }
+
+        .s2 h2,
+        .s2 .num {
+            color: var(--amber);
+        }
+
+        .s3 {
+            border-top: 3px solid var(--magenta);
+        }
+
+        .s3 h2,
+        .s3 .num {
+            color: var(--magenta);
+        }
+
+        .s4 {
+            border-top: 3px solid var(--cyan);
+        }
+
+        .s4 h2,
+        .s4 .num {
+            color: var(--cyan);
+        }
+
+        .arrow {
+            display: flex;
+            align-items: center;
+            color: var(--muted);
+            font-size: 26px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 22px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            color: var(--muted);
+        }
+
+        .footer .brand {
+            color: var(--cyan);
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <span class="eyebrow">IntellAIgent · Dispatch</span>
+        <h1>The AI measurement loop</h1>
+        <div class="sub">Knowing your system means all four. Most setups have none — or the dangerous ones have only a
+            dashboard.</div>
+
+        <div class="flow">
+            <div class="stage s1">
+                <div class="num">01</div>
+                <h2>Measure</h2>
+                <div class="what">Score outputs. Cheap deterministic checks first; a <b>calibrated</b> judge only for
+                    the residue.</div>
+                <div class="tool">scorers · precision/recall · LLM-as-judge</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="stage s2">
+                <div class="num">02</div>
+                <h2>Compare</h2>
+                <div class="what">A vs B, noise-aware. Average samples. Refuse to call a delta a win if it's within the
+                    noise floor.</div>
+                <div class="tool">version diff · "no significant difference"</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="stage s3">
+                <div class="num">03</div>
+                <h2>Gate</h2>
+                <div class="what">Block regressions from shipping. Deterministic scorers only — a gate needs certainty,
+                    not noisy signal.</div>
+                <div class="tool">pass/fail · exit non-zero · CI</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="stage s4">
+                <div class="num">04</div>
+                <h2>Diagnose</h2>
+                <div class="what">When a case fails, the trace shows <b>which step</b> broke. Non-determinism means the
+                    trace is the only evidence.</div>
+                <div class="tool">spans · tokens · the failing step</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span>The number isn't the eval. Knowing whether to believe it is.</span>
+            <span><span class="brand">@intellaigent</span> · Decode the Future 🔹</span>
+        </div>
+    </div>
+</body>
+
+</html>
