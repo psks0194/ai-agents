@@ -25,3 +25,5 @@ build/
 
 # Claude Code (machine-local settings)
 .claude/settings.local.json
+week8-capstone/sample-app/node_modules/
+week8-capstone/reviewer/.env
