@@ -1,0 +1,16 @@
+<section class="positions">
+  <header>
+    <input
+      [ngModel]="store.filter()"
+      (ngModelChange)="store.setFilter($event)"
+      placeholder="Filter symbol…"
+    />
+    <span>Total: ${{ store.totalValue().toFixed(2) }}</span>
+  </header>
+  <ag-grid-angular
+    style="height: 320px"
+    [rowData]="store.visible()"
+    [columnDefs]="columns"
+    [defaultColDef]="{ flex: 1 }"
+  />
+</section>
